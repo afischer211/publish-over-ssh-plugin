@@ -28,3 +28,7 @@ target/
 out/
 *~
 work/
+/target
+.settings/
+.classpath
+.project
