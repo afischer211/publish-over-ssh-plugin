@@ -24,42 +24,44 @@
 
 package jenkins.plugins.publish_over_ssh.jenkins;
 
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.Session;
-import com.jcraft.jsch.SftpATTRS;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
-import hudson.model.FreeStyleProject;
 import hudson.model.Result;
-import jenkins.plugins.publish_over_ssh.BapSshCommonConfiguration;
-import jenkins.plugins.publish_over_ssh.BapSshHostConfiguration;
-import jenkins.plugins.publish_over_ssh.BapSshPublisher;
-import jenkins.plugins.publish_over_ssh.BapSshPublisherPlugin;
-import jenkins.plugins.publish_over_ssh.BapSshTransfer;
-import jenkins.plugins.publish_over_ssh.BapSshUtil;
-import org.junit.Test;
-import org.jvnet.hudson.test.HudsonTestCase;
-import org.jvnet.hudson.test.TestBuilder;
+import hudson.model.AbstractBuild;
+import hudson.model.FreeStyleProject;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import jenkins.plugins.publish_over_ssh.BapSshCommonConfiguration;
+import jenkins.plugins.publish_over_ssh.BapSshHostConfiguration;
+import jenkins.plugins.publish_over_ssh.BapSshPublisher;
+import jenkins.plugins.publish_over_ssh.BapSshPublisherPlugin;
+import jenkins.plugins.publish_over_ssh.BapSshTransfer;
+import jenkins.plugins.publish_over_ssh.BapSshUtil;
+
+import org.junit.Test;
+import org.jvnet.hudson.test.HudsonTestCase;
+import org.jvnet.hudson.test.TestBuilder;
+
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpATTRS;
 
 @SuppressWarnings("PMD.SignatureDeclareThrowsException")
 public class IntegrationTest extends HudsonTestCase {
 
-//    @TODO test that we get the expected result when in a promotion
+    //    @TODO test that we get the expected result when in a promotion
 
     @Test
     public void testIntegration() throws Exception {
@@ -69,11 +71,17 @@ public class IntegrationTest extends HudsonTestCase {
         final int port = 28;
         final int timeout = 3000;
         final BapSshHostConfiguration testHostConfig = new BapSshHostConfiguration("testConfig", "testHostname", "testUsername", "",
-                                                                             "/testRemoteRoot", port, timeout, false, "", "", false) {
+                "/testRemoteRoot", port, timeout, false, "", "", false) {
             @Override
             public JSch createJSch() {
                 return mockJsch;
             }
+
+            @Override
+            public Object readResolve() {
+                return super.readResolve();
+            }
+
         };
         final BapSshCommonConfiguration commonConfig = new BapSshCommonConfiguration("passphrase", "key", "", false);
         new JenkinsTestHelper().setGlobalConfig(commonConfig, testHostConfig);
@@ -81,9 +89,9 @@ public class IntegrationTest extends HudsonTestCase {
         final int execTimeout = 10000;
         final BapSshTransfer transfer = new BapSshTransfer("**/*", null, "sub-home", dirToIgnore, false, false, "", execTimeout, false, false, false, null);
         final BapSshPublisher publisher = new BapSshPublisher(testHostConfig.getName(), false,
-                        new ArrayList<BapSshTransfer>(Collections.singletonList(transfer)), false, false, null, null, null);
+                new ArrayList<BapSshTransfer>(Collections.singletonList(transfer)), false, false, null, null, null);
         final BapSshPublisherPlugin plugin = new BapSshPublisherPlugin(
-                        new ArrayList<BapSshPublisher>(Collections.singletonList(publisher)), false, false, false, "master", null);
+                new ArrayList<BapSshPublisher>(Collections.singletonList(publisher)), false, false, false, "master", null);
 
         final FreeStyleProject project = createFreeStyleProject();
         project.getPublishersList().add(plugin);
@@ -92,7 +100,7 @@ public class IntegrationTest extends HudsonTestCase {
         project.getBuildersList().add(new TestBuilder() {
             @Override
             public boolean perform(final AbstractBuild<?, ?> build, final Launcher launcher, final BuildListener listener)
-                                   throws InterruptedException, IOException {
+                    throws InterruptedException, IOException {
                 final FilePath dir = build.getWorkspace().child(dirToIgnore).child(buildDirectory);
                 dir.mkdirs();
                 dir.child(buildFileName).write("Helloooooo", "UTF-8");
@@ -102,7 +110,7 @@ public class IntegrationTest extends HudsonTestCase {
         });
 
         when(mockJsch.getSession(testHostConfig.getUsername(), testHostConfig.getHostname(), testHostConfig.getPort()))
-                .thenReturn(mockSession);
+        .thenReturn(mockSession);
         when(mockSession.openChannel("sftp")).thenReturn(mockSftp);
         final SftpATTRS mockAttrs = mock(SftpATTRS.class);
         when(mockAttrs.isDir()).thenReturn(true);
