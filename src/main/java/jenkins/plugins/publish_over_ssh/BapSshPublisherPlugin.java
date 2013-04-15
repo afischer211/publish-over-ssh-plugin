@@ -26,16 +26,18 @@ package jenkins.plugins.publish_over_ssh;
 
 import hudson.Extension;
 import hudson.model.Hudson;
+
+import java.util.ArrayList;
+
 import jenkins.plugins.publish_over.BPPlugin;
 import jenkins.plugins.publish_over.BPPluginDescriptor;
 import jenkins.plugins.publish_over_ssh.descriptor.BapSshPublisherPluginDescriptor;
+
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.stapler.DataBoundConstructor;
-
-import java.util.ArrayList;
 
 @SuppressWarnings({ "PMD.TooManyMethods", "PMD.LooseCoupling" })
 public class BapSshPublisherPlugin extends BPPlugin<BapSshPublisher, BapSshClient, BapSshCommonConfiguration> {
@@ -44,8 +46,8 @@ public class BapSshPublisherPlugin extends BPPlugin<BapSshPublisher, BapSshClien
 
     @DataBoundConstructor
     public BapSshPublisherPlugin(final ArrayList<BapSshPublisher> publishers, final boolean continueOnError, final boolean failOnError,
-                                 final boolean alwaysPublishFromMaster, final String masterNodeName,
-                                 final BapSshParamPublish paramPublish) {
+            final boolean alwaysPublishFromMaster, final String masterNodeName,
+            final BapSshParamPublish paramPublish) {
         super(Messages.console_message_prefix(), publishers, continueOnError, failOnError, alwaysPublishFromMaster, masterNodeName,
                 paramPublish);
     }
@@ -54,6 +56,7 @@ public class BapSshPublisherPlugin extends BPPlugin<BapSshPublisher, BapSshClien
         return (BapSshParamPublish) getDelegate().getParamPublish();
     }
 
+    @Override
     public boolean equals(final Object that) {
         if (this == that) return true;
         if (that == null || getClass() != that.getClass()) return false;
@@ -61,14 +64,17 @@ public class BapSshPublisherPlugin extends BPPlugin<BapSshPublisher, BapSshClien
         return addToEquals(new EqualsBuilder(), (BapSshPublisherPlugin) that).isEquals();
     }
 
+    @Override
     public int hashCode() {
         return addToHashCode(new HashCodeBuilder()).toHashCode();
     }
 
+    @Override
     public String toString() {
         return addToToString(new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)).toString();
     }
 
+    @Override
     public Descriptor getDescriptor() {
         return Hudson.getInstance().getDescriptorByType(Descriptor.class);
     }
@@ -78,7 +84,13 @@ public class BapSshPublisherPlugin extends BPPlugin<BapSshPublisher, BapSshClien
     }
 
     @Extension
-    public static class Descriptor extends BapSshPublisherPluginDescriptor { }
+    public static class Descriptor extends BapSshPublisherPluginDescriptor {
+
+        @Override
+        public Object readResolve() {
+            return super.readResolve();
+        }
+    }
 
     /** prevent xstream noise */
     @Deprecated
